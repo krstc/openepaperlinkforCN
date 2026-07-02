@@ -1,0 +1,85 @@
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+# Local agent/workspace metadata
+.agents/
+.codex/
+
+# PlatformIO build/cache output
+.pio/
+**/.pio/
+.pioenvs/
+.piolibdeps/
+tag_fw/core/
+tag_bootloader/core/
+
+# Generated firmware images
+Newton_M3_Universal-*.bin
+tag_fw/Newton_M3_Universal-*.bin
+tag_fw/Newton_M3_Universal-*.hex
+nrf52811/固件/Newton_M3_Universal-*.bin
+nrf52811/固件/Newton_M3_Universal-*.hex
+
+# Reference-code build output
+refdoc/**/OBJ/
+refdoc/**/Objects/
+refdoc/**/Listings/
+*.axf
+*.crf
+*.lnp
+*.plg
+*.lst
+*.dep
+*.build_log.htm
+*.uvgui*
+JLinkLog.txt
