@@ -28,6 +28,7 @@
 #define CMD_PARTIAL_WINDOW 0x83
 
 #define JD79665_NEW_GATE_GAP 24
+#define JD79665_PACKED_WHITE 0x55
 
 bool jd79665::waitReady(uint32_t timeout) {
     uint32_t start = millis();
@@ -269,6 +270,18 @@ void jd79665::epdWriteDisplayDataWithGateGap() {
         epdSPIWait();
         epdDeselect();
     }
+
+    memset(buf, JD79665_PACKED_WHITE, packedWidth);
+    setPartialRamArea(0, gapStartY, this->effectiveXRes, JD79665_NEW_GATE_GAP, true);
+    epd_cmd(CMD_DATA_START);
+    markData();
+    epdSelect();
+    for (uint16_t gapY = 0; gapY < JD79665_NEW_GATE_GAP; gapY++) {
+        wdt60s();
+        epdSPIAsyncWrite(buf, packedWidth);
+        epdSPIWait();
+    }
+    epdDeselect();
 
     drawItem::flushDrawItems();
     free(drawline_b);
