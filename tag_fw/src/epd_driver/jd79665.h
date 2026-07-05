@@ -12,7 +12,7 @@ class jd79665 : public epdInterface {
 
    protected:
     void epdWriteDisplayData();
-    void epdWriteDisplayDataSplitRows();
+    void epdWriteDisplayDataWithGateGap();
 
    private:
     bool powerIsOn = false;
