@@ -11,6 +11,7 @@
 #include "wdt.h"
 
 #include "jd79665.h"
+#include "../../../shared/oepl-definitions.h"
 
 #define CMD_PANEL_SETTING 0x00
 #define CMD_POWER_OFF 0x02
@@ -120,6 +121,11 @@ void jd79665::epdEnterSleep() {
 }
 
 void jd79665::epdWriteDisplayData() {
+    if (tag.solumType == STYPE_SIZE_75_JD79665_BWRY_NEW) {
+        epdWriteDisplayDataFullWindow();
+        return;
+    }
+
     uint16_t byteWidth = (this->effectiveXRes + 7) / 8;
     uint8_t *drawline_b = (uint8_t *)calloc(byteWidth, 1);
     uint8_t *drawline_r = (uint8_t *)calloc(byteWidth, 1);
@@ -182,6 +188,77 @@ void jd79665::epdWriteDisplayData() {
     }
 
     epdSPIWait();
+    drawItem::flushDrawItems();
+    free(drawline_b);
+    free(drawline_r);
+    free(drawline_y);
+    free(buf);
+}
+
+void jd79665::epdWriteDisplayDataFullWindow() {
+    uint16_t byteWidth = (this->effectiveXRes + 7) / 8;
+    uint16_t packedWidth = (this->effectiveXRes + 3) / 4;
+    uint8_t *drawline_b = (uint8_t *)calloc(byteWidth, 1);
+    uint8_t *drawline_r = (uint8_t *)calloc(byteWidth, 1);
+    uint8_t *drawline_y = (uint8_t *)calloc(byteWidth, 1);
+    uint8_t *buf = (uint8_t *)calloc(packedWidth, 1);
+
+    if (!drawline_b || !drawline_r || !drawline_y || !buf) {
+        if (drawline_b) free(drawline_b);
+        if (drawline_r) free(drawline_r);
+        if (drawline_y) free(drawline_y);
+        if (buf) free(buf);
+        return;
+    }
+
+    setPartialRamArea(0, 0, this->effectiveXRes, this->effectiveYRes, true);
+    epd_cmd(CMD_DATA_START);
+    markData();
+    epdSelect();
+
+    for (uint16_t curY = 0; curY < this->effectiveYRes; curY++) {
+        wdt60s();
+        memset(drawline_b, 0, byteWidth);
+        memset(drawline_r, 0, byteWidth);
+        memset(drawline_y, 0, byteWidth);
+        memset(buf, 0, packedWidth);
+
+        uint16_t sourceY = this->epdMirrorV ? (this->effectiveYRes - curY - 1) : curY;
+        drawItem::renderDrawLine(drawline_b, sourceY, 0);
+        drawItem::renderDrawLine(drawline_r, sourceY, 1);
+        drawItem::renderDrawLine(drawline_y, sourceY, 2);
+        if (this->epdMirrorH) {
+            drawItem::reverseBytes(drawline_b, byteWidth);
+            drawItem::reverseBytes(drawline_r, byteWidth);
+            drawItem::reverseBytes(drawline_y, byteWidth);
+        }
+
+        for (uint16_t x = 0; x < this->effectiveXRes;) {
+            uint8_t out = 0;
+            for (uint8_t shift = 0; shift < 4; shift++) {
+                uint16_t curByte = x / 8;
+                uint8_t curMask = 1 << (7 - (x % 8));
+
+                out <<= 2;
+                if (drawline_r[curByte] & curMask) {
+                    out |= 0x03;
+                } else if (drawline_y[curByte] & curMask) {
+                    out |= 0x02;
+                } else if (drawline_b[curByte] & curMask) {
+                    out |= 0x00;
+                } else {
+                    out |= 0x01;
+                }
+                x++;
+            }
+            buf[(x / 4) - 1] = out;
+        }
+
+        epdSPIAsyncWrite(buf, packedWidth);
+        epdSPIWait();
+    }
+
+    epdDeselect();
     drawItem::flushDrawItems();
     free(drawline_b);
     free(drawline_r);

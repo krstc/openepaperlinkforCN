@@ -121,6 +121,7 @@
 // Custom / experimental tag types
 #define CUSTOM_UC8253_BWR_37 0xD8
 #define CUSTOM_JD79665_BWRY_75 0xD9
+#define CUSTOM_JD79665_BWRY_75_NEW 0xDA
 
 // Solum types - customer data byte 0x16 in M3 (nRF) UICR
 #define STYPE_SIZE_016 0x40
@@ -161,6 +162,7 @@
 #define STYPE_SIZE_075_UC8159 0x05
 #define STYPE_SIZE_037_UC8253 0xD8
 #define STYPE_SIZE_75_JD79665_BWRY 0xD9
+#define STYPE_SIZE_75_JD79665_BWRY_NEW 0xDA
 
 // Capability flags
 #define CAPABILITY_HAS_LED 0x01

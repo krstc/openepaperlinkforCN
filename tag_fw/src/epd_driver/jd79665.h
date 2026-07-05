@@ -12,6 +12,7 @@ class jd79665 : public epdInterface {
 
    protected:
     void epdWriteDisplayData();
+    void epdWriteDisplayDataFullWindow();
 
    private:
     bool powerIsOn = false;

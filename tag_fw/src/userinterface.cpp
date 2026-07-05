@@ -208,6 +208,7 @@ void showSplashScreen() {
             addQR(40, 120, 3, 7, "https://openepaperlink.eu/tag/0/%02X/%02X%02X%02X%02X%02X%02X%02X%02X/", tag.OEPLtype, mSelfMac[7], mSelfMac[6], mSelfMac[5], mSelfMac[4], mSelfMac[3], mSelfMac[2], mSelfMac[1], mSelfMac[0]);
             break;
         case STYPE_SIZE_75_JD79665_BWRY:
+        case STYPE_SIZE_75_JD79665_BWRY_NEW:
             fr.setFont(&FreeSansBold24pt7b);
             fr.epdPrintf(10, 10, COLOR_BLACK, rotation::ROTATE_0, "OpenEPaperLink");
             fr.setFont(&FreeSansBold18pt7b);
@@ -439,6 +440,7 @@ void showAPFound() {
         case STYPE_SIZE_075:
         case STYPE_SIZE_075_UC8159:
         case STYPE_SIZE_75_JD79665_BWRY:
+        case STYPE_SIZE_75_JD79665_BWRY_NEW:
             fr.setFont(&FreeSansBold18pt7b);
             fr.epdPrintf(7, 7, COLOR_BLACK, rotation::ROTATE_0, "AP Found - Waiting for data");
             fr.setFont(&FreeSans9pt7b);
@@ -596,6 +598,7 @@ void showNoAP() {
         case STYPE_SIZE_075:
         case STYPE_SIZE_075_UC8159:
         case STYPE_SIZE_75_JD79665_BWRY:
+        case STYPE_SIZE_75_JD79665_BWRY_NEW:
             fr.setFont(&FreeSansBold18pt7b);
             fr.epdPrintf(7, 7, COLOR_BLACK, rotation::ROTATE_0, "No AP Found          U_U");
             fr.setFont(&FreeSans9pt7b);
