@@ -122,7 +122,7 @@ void jd79665::epdEnterSleep() {
 
 void jd79665::epdWriteDisplayData() {
     if (tag.solumType == STYPE_SIZE_75_JD79665_BWRY_NEW) {
-        epdWriteDisplayDataFullWindow();
+        epdWriteDisplayDataSplitRows();
         return;
     }
 
@@ -195,7 +195,7 @@ void jd79665::epdWriteDisplayData() {
     free(buf);
 }
 
-void jd79665::epdWriteDisplayDataFullWindow() {
+void jd79665::epdWriteDisplayDataSplitRows() {
     uint16_t byteWidth = (this->effectiveXRes + 7) / 8;
     uint16_t packedWidth = (this->effectiveXRes + 3) / 4;
     uint8_t *drawline_b = (uint8_t *)calloc(byteWidth, 1);
@@ -210,11 +210,6 @@ void jd79665::epdWriteDisplayDataFullWindow() {
         if (buf) free(buf);
         return;
     }
-
-    setPartialRamArea(0, 0, this->effectiveXRes, this->effectiveYRes, true);
-    epd_cmd(CMD_DATA_START);
-    markData();
-    epdSelect();
 
     for (uint16_t curY = 0; curY < this->effectiveYRes; curY++) {
         wdt60s();
@@ -254,11 +249,22 @@ void jd79665::epdWriteDisplayDataFullWindow() {
             buf[(x / 4) - 1] = out;
         }
 
+        uint16_t physicalY;
+        if (curY < (this->effectiveYRes / 2)) {
+            physicalY = curY * 2;
+        } else {
+            physicalY = (this->effectiveYRes - 1) - (2 * (curY - (this->effectiveYRes / 2)));
+        }
+
+        setPartialRamArea(0, physicalY, this->effectiveXRes, 1, true);
+        epd_cmd(CMD_DATA_START);
+        markData();
+        epdSelect();
         epdSPIAsyncWrite(buf, packedWidth);
         epdSPIWait();
+        epdDeselect();
     }
 
-    epdDeselect();
     drawItem::flushDrawItems();
     free(drawline_b);
     free(drawline_r);
