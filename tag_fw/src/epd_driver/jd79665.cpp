@@ -27,9 +27,10 @@
 #define CMD_GSST_SETTING 0x65
 #define CMD_PARTIAL_WINDOW 0x83
 
-#define JD79665_NEW_SCAN_GAP 18
-#define JD79665_NEW_DEAD_GAP 10
-#define JD79665_NEW_DEAD_GAP_OFFSET ((JD79665_NEW_SCAN_GAP - JD79665_NEW_DEAD_GAP) / 2)
+#define JD79665_NEW_PHYSICAL_XRES 800
+#define JD79665_NEW_PHYSICAL_YRES 600
+#define JD79665_NEW_X_OFFSET 0
+#define JD79665_NEW_Y_OFFSET 0
 #define JD79665_PACKED_WHITE 0x55
 
 bool jd79665::waitReady(uint32_t timeout) {
@@ -111,12 +112,14 @@ void jd79665::epdSetup() {
     epdWrite(CMD_TCON_SETTING, 2, 0x02, 0x00);
     epdWrite(CMD_PLL_CONTROL, 1, 0x08);
     epdWrite(CMD_VCOM_INTERVAL, 1, 0x3F);
+    uint16_t physicalXRes = this->effectiveXRes;
     uint16_t physicalYRes = this->effectiveYRes;
     if (tag.solumType == STYPE_SIZE_75_JD79665_BWRY_NEW) {
-        physicalYRes += JD79665_NEW_SCAN_GAP;
+        physicalXRes = JD79665_NEW_PHYSICAL_XRES;
+        physicalYRes = JD79665_NEW_PHYSICAL_YRES;
     }
     epdWrite(CMD_RESOLUTION_SETTING, 4,
-             this->effectiveXRes >> 8, this->effectiveXRes & 0xFF,
+             physicalXRes >> 8, physicalXRes & 0xFF,
              physicalYRes >> 8, physicalYRes & 0xFF);
     epdWrite(CMD_GSST_SETTING, 4, 0x10, 0x00, 0x20, 0x00);
     epdWrite(0xE3, 1, 0x2F);
@@ -131,7 +134,7 @@ void jd79665::epdEnterSleep() {
 
 void jd79665::epdWriteDisplayData() {
     if (tag.solumType == STYPE_SIZE_75_JD79665_BWRY_NEW) {
-        epdWriteDisplayDataWithGateGap();
+        epdWriteDisplayDataPhysicalFrame();
         return;
     }
 
@@ -204,10 +207,9 @@ void jd79665::epdWriteDisplayData() {
     free(buf);
 }
 
-void jd79665::epdWriteDisplayDataWithGateGap() {
+void jd79665::epdWriteDisplayDataPhysicalFrame() {
     uint16_t byteWidth = (this->effectiveXRes + 7) / 8;
-    uint16_t packedWidth = (this->effectiveXRes + 3) / 4;
-    uint16_t deadGapStartY = (this->effectiveYRes / 2) + JD79665_NEW_DEAD_GAP_OFFSET;
+    uint16_t packedWidth = (JD79665_NEW_PHYSICAL_XRES + 3) / 4;
     uint8_t *drawline_b = (uint8_t *)calloc(byteWidth, 1);
     uint8_t *drawline_r = (uint8_t *)calloc(byteWidth, 1);
     uint8_t *drawline_y = (uint8_t *)calloc(byteWidth, 1);
@@ -221,36 +223,54 @@ void jd79665::epdWriteDisplayDataWithGateGap() {
         return;
     }
 
-    for (uint16_t curY = 0; curY < this->effectiveYRes; curY++) {
+    setPartialRamArea(0, 0, JD79665_NEW_PHYSICAL_XRES, JD79665_NEW_PHYSICAL_YRES, true);
+    epd_cmd(CMD_DATA_START);
+    markData();
+    epdSelect();
+
+    for (uint16_t physicalY = 0; physicalY < JD79665_NEW_PHYSICAL_YRES; physicalY++) {
         wdt60s();
         memset(drawline_b, 0, byteWidth);
         memset(drawline_r, 0, byteWidth);
         memset(drawline_y, 0, byteWidth);
-        memset(buf, 0, packedWidth);
+        memset(buf, JD79665_PACKED_WHITE, packedWidth);
 
-        uint16_t sourceY = this->epdMirrorV ? (this->effectiveYRes - curY - 1) : curY;
-        drawItem::renderDrawLine(drawline_b, sourceY, 0);
-        drawItem::renderDrawLine(drawline_r, sourceY, 1);
-        drawItem::renderDrawLine(drawline_y, sourceY, 2);
-        if (this->epdMirrorH) {
-            drawItem::reverseBytes(drawline_b, byteWidth);
-            drawItem::reverseBytes(drawline_r, byteWidth);
-            drawItem::reverseBytes(drawline_y, byteWidth);
+        bool hasLogicalY = physicalY >= JD79665_NEW_Y_OFFSET &&
+                           physicalY < (JD79665_NEW_Y_OFFSET + this->effectiveYRes);
+        if (hasLogicalY) {
+            uint16_t curY = physicalY - JD79665_NEW_Y_OFFSET;
+            uint16_t sourceY = this->epdMirrorV ? (this->effectiveYRes - curY - 1) : curY;
+            drawItem::renderDrawLine(drawline_b, sourceY, 0);
+            drawItem::renderDrawLine(drawline_r, sourceY, 1);
+            drawItem::renderDrawLine(drawline_y, sourceY, 2);
+            if (this->epdMirrorH) {
+                drawItem::reverseBytes(drawline_b, byteWidth);
+                drawItem::reverseBytes(drawline_r, byteWidth);
+                drawItem::reverseBytes(drawline_y, byteWidth);
+            }
         }
 
-        for (uint16_t x = 0; x < this->effectiveXRes;) {
+        for (uint16_t x = 0; x < JD79665_NEW_PHYSICAL_XRES;) {
             uint8_t out = 0;
             for (uint8_t shift = 0; shift < 4; shift++) {
-                uint16_t curByte = x / 8;
-                uint8_t curMask = 1 << (7 - (x % 8));
+                bool hasLogicalX = x >= JD79665_NEW_X_OFFSET &&
+                                   x < (JD79665_NEW_X_OFFSET + this->effectiveXRes);
+                uint16_t logicalX = x - JD79665_NEW_X_OFFSET;
 
                 out <<= 2;
-                if (drawline_r[curByte] & curMask) {
-                    out |= 0x03;
-                } else if (drawline_y[curByte] & curMask) {
-                    out |= 0x02;
-                } else if (drawline_b[curByte] & curMask) {
-                    out |= 0x00;
+                if (hasLogicalY && hasLogicalX) {
+                    uint16_t curByte = logicalX / 8;
+                    uint8_t curMask = 1 << (7 - (logicalX % 8));
+
+                    if (drawline_r[curByte] & curMask) {
+                        out |= 0x03;
+                    } else if (drawline_y[curByte] & curMask) {
+                        out |= 0x02;
+                    } else if (drawline_b[curByte] & curMask) {
+                        out |= 0x00;
+                    } else {
+                        out |= 0x01;
+                    }
                 } else {
                     out |= 0x01;
                 }
@@ -259,46 +279,10 @@ void jd79665::epdWriteDisplayDataWithGateGap() {
             buf[(x / 4) - 1] = out;
         }
 
-        uint16_t physicalY = curY;
-        if (curY >= deadGapStartY) {
-            physicalY += JD79665_NEW_DEAD_GAP;
-        }
-
-        setPartialRamArea(0, physicalY, this->effectiveXRes, 1, true);
-        epd_cmd(CMD_DATA_START);
-        markData();
-        epdSelect();
-        epdSPIAsyncWrite(buf, packedWidth);
-        epdSPIWait();
-        epdDeselect();
-    }
-
-    memset(buf, JD79665_PACKED_WHITE, packedWidth);
-    setPartialRamArea(0, deadGapStartY, this->effectiveXRes, JD79665_NEW_DEAD_GAP, true);
-    epd_cmd(CMD_DATA_START);
-    markData();
-    epdSelect();
-    for (uint16_t gapY = 0; gapY < JD79665_NEW_DEAD_GAP; gapY++) {
-        wdt60s();
         epdSPIAsyncWrite(buf, packedWidth);
         epdSPIWait();
     }
     epdDeselect();
-
-    uint16_t unusedTailRows = JD79665_NEW_SCAN_GAP - JD79665_NEW_DEAD_GAP;
-    if (unusedTailRows) {
-        uint16_t tailStartY = this->effectiveYRes + JD79665_NEW_DEAD_GAP;
-        setPartialRamArea(0, tailStartY, this->effectiveXRes, unusedTailRows, true);
-        epd_cmd(CMD_DATA_START);
-        markData();
-        epdSelect();
-        for (uint16_t tailY = 0; tailY < unusedTailRows; tailY++) {
-            wdt60s();
-            epdSPIAsyncWrite(buf, packedWidth);
-            epdSPIWait();
-        }
-        epdDeselect();
-    }
 
     drawItem::flushDrawItems();
     free(drawline_b);
@@ -321,11 +305,13 @@ void jd79665::draw() {
 void jd79665::drawNoWait() {
     powerOn();
     epdWriteDisplayData();
+    uint16_t physicalXRes = this->effectiveXRes;
     uint16_t physicalYRes = this->effectiveYRes;
     if (tag.solumType == STYPE_SIZE_75_JD79665_BWRY_NEW) {
-        physicalYRes += JD79665_NEW_SCAN_GAP;
+        physicalXRes = JD79665_NEW_PHYSICAL_XRES;
+        physicalYRes = JD79665_NEW_PHYSICAL_YRES;
     }
-    setPartialRamArea(0, 0, this->effectiveXRes, physicalYRes, true);
+    setPartialRamArea(0, 0, physicalXRes, physicalYRes, true);
     epdWrite(CMD_DISPLAY_REFRESH, 1, 0x00);
     delay(1);
 }
