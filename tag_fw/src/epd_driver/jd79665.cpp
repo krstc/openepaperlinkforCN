@@ -27,7 +27,7 @@
 #define CMD_GSST_SETTING 0x65
 #define CMD_PARTIAL_WINDOW 0x83
 
-#define JD79665_NEW_GATE_GAP 24
+#define JD79665_NEW_GATE_GAP 12
 #define JD79665_PACKED_WHITE 0x55
 
 bool jd79665::waitReady(uint32_t timeout) {
