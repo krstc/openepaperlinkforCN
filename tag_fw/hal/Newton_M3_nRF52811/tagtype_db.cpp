@@ -406,6 +406,7 @@ void identifyTagInfo() {
             tag.macSuffix = 0xDB90;
             tag.OEPLtype = CUSTOM_SSD1667_BWR_102;
             epd->drawDirectionRight = false;
+            epd->epdMirrorH = true;
             if (!ssd1667Bwr102) {
                 epd->Xres = 960;
                 epd->Yres = 640;
