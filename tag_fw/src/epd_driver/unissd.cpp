@@ -12,6 +12,7 @@
 
 #include "drawing.h"
 #include "unissd.h"
+#include "../../../shared/oepl-definitions.h"
 
 #define CMD_DRV_OUTPUT_CTRL 0x01
 #define CMD_SOFT_START_CTRL 0x0C
@@ -101,7 +102,11 @@ void unissd::epdSetup() {
             epdWrite(0x47, 1, 0xF7);
             delay(15);
             epdWrite(CMD_SOFT_START_CTRL, 5, 0xAE, 0xC7, 0xC3, 0xC0, 0x80);
-            epdWrite(CMD_DRV_OUTPUT_CTRL, 3, 0x9F, 0x02, 0x00);
+            if (tag.solumType == STYPE_SIZE_102_SSD1667) {
+                epdWrite(CMD_DRV_OUTPUT_CTRL, 3, (this->effectiveYRes - 1) & 0xFF, (this->effectiveYRes - 1) >> 8, 0x00);
+            } else {
+                epdWrite(CMD_DRV_OUTPUT_CTRL, 3, 0x9F, 0x02, 0x00);
+            }
             // epdWrite(CMD_DRV_OUTPUT_CTRL, 3, 0x2E, 0x02, 0x00);
             epdWrite(CMD_DATA_ENTRY_MODE, 1, 0x02);
             epdWrite(CMD_WINDOW_X_SIZE, 4, 0xBF, 0x03, 0x00, 0x00);

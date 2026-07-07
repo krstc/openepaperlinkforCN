@@ -156,6 +156,7 @@ void identifyTagInfo() {
     bool uc8159LowRes750 = ((controllerType == 0x10 || controllerType == 0x11) && tag.solumType == STYPE_SIZE_075_UC8159 && epdXRes == 640 && epdYRes == 384);
     bool ssd1677HighRes750 = (controllerType == 0x1B && tag.solumType == STYPE_SIZE_075 && epdXRes == 880 && epdYRes == 528);
     bool uc8253Gdey370 = (controllerType == 0x18 && tag.solumType == STYPE_SIZE_037_UC8253 && epdXRes == 416 && epdYRes == 240);
+    bool ssd1667Bwr102 = (controllerType == 0x19 && tag.solumType == STYPE_SIZE_102_SSD1667 && epdXRes == 960 && epdYRes == 640);
     bool jd79665Bwry750 = (controllerType == 0x1C &&
                            (tag.solumType == STYPE_SIZE_75_JD79665_BWRY || tag.solumType == STYPE_SIZE_75_JD79665_BWRY_NEW) &&
                            epdXRes == 768 && epdYRes == 552);
@@ -400,6 +401,17 @@ void identifyTagInfo() {
             tag.macSuffix = 0xE4D0;
             epd->drawDirectionRight = true;
             tag.OEPLtype = SOLUM_M3_BWR_97;
+            break;
+        case STYPE_SIZE_102_SSD1667:
+            tag.macSuffix = 0xDB90;
+            tag.OEPLtype = CUSTOM_SSD1667_BWR_102;
+            epd->drawDirectionRight = false;
+            if (!ssd1667Bwr102) {
+                epd->Xres = 960;
+                epd->Yres = 640;
+                epd->effectiveXRes = 960;
+                epd->effectiveYRes = 640;
+            }
             break;
         case STYPE_SIZE_027:
             tag.macSuffix = 0xB490;

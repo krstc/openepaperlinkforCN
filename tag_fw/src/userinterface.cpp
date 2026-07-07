@@ -233,6 +233,7 @@ void showSplashScreen() {
             addQR(100, 160, 3, 7, "https://openepaperlink.eu/tag/0/%02X/%02X%02X%02X%02X%02X%02X%02X%02X/", tag.OEPLtype, mSelfMac[7], mSelfMac[6], mSelfMac[5], mSelfMac[4], mSelfMac[3], mSelfMac[2], mSelfMac[1], mSelfMac[0]);
             break;
         case STYPE_SIZE_097:
+        case STYPE_SIZE_102_SSD1667:
         case STYPE_SIZE_116B:
         case STYPE_SIZE_116:
             fr.setFont(&FreeSansBold24pt7b);
@@ -240,6 +241,8 @@ void showSplashScreen() {
             fr.setFont(&FreeSansBold18pt7b);
             if (tag.solumType == STYPE_SIZE_116B) {
                 fr.epdPrintf(15, 60, COLOR_RED, rotation::ROTATE_0, "Newton M3 11.6\"");
+            } else if (tag.solumType == STYPE_SIZE_102_SSD1667) {
+                fr.epdPrintf(15, 60, COLOR_RED, rotation::ROTATE_0, "Newton M3 SSD1667 10.2\"");
             } else {
                 fr.epdPrintf(15, 60, COLOR_RED, rotation::ROTATE_0, "Newton M3 9.7\"");
             }
@@ -454,6 +457,7 @@ void showAPFound() {
             addQR(epd->Xres - 66, 47, 3, 2, "https://openepaperlink.eu/tag/1/%02X/%02X%02X%02X%02X%02X%02X%02X%02X/", tag.OEPLtype, mSelfMac[7], mSelfMac[6], mSelfMac[5], mSelfMac[4], mSelfMac[3], mSelfMac[2], mSelfMac[1], mSelfMac[0]);
             break;
         case STYPE_SIZE_097:
+        case STYPE_SIZE_102_SSD1667:
         case STYPE_SIZE_116B:
         case STYPE_SIZE_116:
             fr.setFont(&FreeSansBold18pt7b);
@@ -610,6 +614,7 @@ void showNoAP() {
             addFlashImage(312, 274, COLOR_RED, rotation::ROTATE_0, pandared);
             break;
         case STYPE_SIZE_097:
+        case STYPE_SIZE_102_SSD1667:
         case STYPE_SIZE_116B:
         case STYPE_SIZE_116:
             fr.setFont(&FreeSansBold18pt7b);
